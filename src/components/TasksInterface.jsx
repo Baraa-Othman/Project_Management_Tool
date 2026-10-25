@@ -2,12 +2,13 @@ import React, { useState } from 'react';
 import { formatDateDDMMYYYY, calculateFinishDate } from '../projectData';
 
 export default function TasksInterface({ tasks, setTasks }) {
-  const [editingTask, setEditingTask] = useState(null);
+  const [showForm, setShowForm] = useState(false);
+  const [editingTaskId, setEditingTaskId] = useState(null);
   const [formData, setFormData] = useState({
     name: '',
-    duration: 1,
-    start: '2026-11-10',
-    finish: '2026-11-10'
+    duration: 5,
+    start: new Date().toISOString().split('T')[0],
+    finish: calculateFinishDate(new Date().toISOString().split('T')[0], 5)
   });
 
   const handleStartChange = (e) => {
@@ -38,7 +39,7 @@ export default function TasksInterface({ tasks, setTasks }) {
   };
 
   const handleOpenAdd = () => {
-    setEditingTask(null);
+    setEditingTaskId(null);
     const today = new Date().toISOString().split('T')[0];
     setFormData({
       name: '',
@@ -46,16 +47,23 @@ export default function TasksInterface({ tasks, setTasks }) {
       start: today,
       finish: calculateFinishDate(today, 5)
     });
+    setShowForm(true);
   };
 
   const handleOpenEdit = (task) => {
-    setEditingTask(task.id);
+    setEditingTaskId(task.id);
     setFormData({
       name: task.name,
       duration: task.duration,
       start: task.start,
       finish: task.finish
     });
+    setShowForm(true);
+  };
+
+  const handleCloseForm = () => {
+    setShowForm(false);
+    setEditingTaskId(null);
   };
 
   const handleSave = (e) => {
@@ -65,9 +73,9 @@ export default function TasksInterface({ tasks, setTasks }) {
       return;
     }
 
-    if (editingTask !== null) {
+    if (editingTaskId !== null) {
       setTasks(prev => prev.map(t => (
-        t.id === editingTask
+        t.id === editingTaskId
           ? { ...t, ...formData }
           : t
       )));
@@ -75,7 +83,7 @@ export default function TasksInterface({ tasks, setTasks }) {
       const nextId = tasks.length > 0 ? Math.max(...tasks.map(t => t.id)) + 1 : 1;
       setTasks(prev => [...prev, {
         id: nextId,
-        name: formData.name,
+        name: formData.name.trim(),
         duration: formData.duration,
         start: formData.start,
         finish: formData.finish,
@@ -83,8 +91,8 @@ export default function TasksInterface({ tasks, setTasks }) {
       }]);
     }
 
-    setEditingTask(null);
-    setFormData({ name: '', duration: 1, start: '', finish: '' });
+    setShowForm(false);
+    setEditingTaskId(null);
   };
 
   const handleDelete = (id) => {
@@ -95,17 +103,94 @@ export default function TasksInterface({ tasks, setTasks }) {
 
   return (
     <div className="card shadow-sm border-0 mb-4">
+      {/* Header */}
       <div className="card-header bg-white border-bottom py-3 d-flex flex-wrap align-items-center justify-content-between gap-2">
         <div>
           <span className="badge bg-success me-2 px-2 py-1">Interface 1</span>
           <h5 className="d-inline-block mb-0 fw-bold text-dark">Tasks Interface</h5>
           <small className="text-muted d-block mt-1">Manage project tasks, estimated durations, and project timelines</small>
         </div>
-        <button className="btn btn-success d-flex align-items-center gap-2" onClick={handleOpenAdd}>
-          <i className="bi bi-plus-circle-fill"></i> Add Task
+        <button
+          className="btn btn-success d-flex align-items-center gap-2 shadow-sm"
+          onClick={handleOpenAdd}
+        >
+          <i className="bi bi-plus-circle-fill"></i> Add New Task
         </button>
       </div>
 
+      {/* Prominent Add/Edit Form Box */}
+      {showForm && (
+        <div className="bg-light border-bottom p-4">
+          <div className="d-flex justify-content-between align-items-center mb-3">
+            <h6 className="fw-bold mb-0 text-success">
+              <i className={`bi ${editingTaskId ? 'bi-pencil-square' : 'bi-plus-circle-dotted'} me-2`}></i>
+              {editingTaskId ? `Edit Task #${editingTaskId}` : 'Create New Task'}
+            </h6>
+            <button type="button" className="btn-close" aria-label="Close" onClick={handleCloseForm}></button>
+          </div>
+          <form onSubmit={handleSave}>
+            <div className="row g-3 align-items-end">
+              <div className="col-12 col-md-4">
+                <label className="form-label small fw-semibold">Task Name</label>
+                <input
+                  type="text"
+                  className="form-control"
+                  placeholder="e.g. System Testing"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  autoFocus
+                  required
+                />
+              </div>
+              <div className="col-6 col-md-2">
+                <label className="form-label small fw-semibold">Duration (days)</label>
+                <input
+                  type="number"
+                  min="1"
+                  className="form-control"
+                  value={formData.duration}
+                  onChange={handleDurationChange}
+                  required
+                />
+              </div>
+              <div className="col-6 col-md-2">
+                <label className="form-label small fw-semibold">Start (Date)</label>
+                <input
+                  type="date"
+                  className="form-control"
+                  value={formData.start}
+                  onChange={handleStartChange}
+                  required
+                />
+              </div>
+              <div className="col-6 col-md-2">
+                <label className="form-label small fw-semibold">Finish (Date)</label>
+                <input
+                  type="date"
+                  className="form-control"
+                  value={formData.finish}
+                  onChange={handleFinishChange}
+                  required
+                />
+              </div>
+              <div className="col-12 col-md-2 d-flex gap-2">
+                <button type="submit" className="btn btn-success flex-grow-1 fw-bold">
+                  <i className="bi bi-check-lg me-1"></i> {editingTaskId ? 'Update' : 'Save Task'}
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-outline-secondary"
+                  onClick={handleCloseForm}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* Tasks Table */}
       <div className="card-body p-0">
         <div className="table-responsive">
           <table className="table table-bordered table-hover mpp-table align-middle">
@@ -114,21 +199,24 @@ export default function TasksInterface({ tasks, setTasks }) {
                 <th style={{ width: '80px' }} className="text-center">Task ID</th>
                 <th>Task Name</th>
                 <th style={{ width: '130px' }}>Duration</th>
-                <th style={{ width: '140px' }}>Start (Date)</th>
-                <th style={{ width: '140px' }}>Finish (Date)</th>
+                <th style={{ width: '150px' }}>Start (Date)</th>
+                <th style={{ width: '150px' }}>Finish (Date)</th>
                 <th style={{ width: '120px' }} className="text-center no-print">Actions</th>
               </tr>
             </thead>
             <tbody>
               {tasks.length === 0 ? (
                 <tr>
-                  <td colSpan="6" className="text-center text-muted py-4">
-                    No tasks created yet. Click "Add Task" to create your first task.
+                  <td colSpan="6" className="text-center text-muted py-5">
+                    <p className="mb-2">No tasks available.</p>
+                    <button className="btn btn-sm btn-outline-success" onClick={handleOpenAdd}>
+                      <i className="bi bi-plus-circle me-1"></i> Add your first task
+                    </button>
                   </td>
                 </tr>
               ) : (
                 tasks.map((task) => (
-                  <tr key={task.id}>
+                  <tr key={task.id} className={editingTaskId === task.id ? 'table-active' : ''}>
                     <td className="text-center fw-semibold text-secondary">{task.id}</td>
                     <td className="fw-medium">{task.name}</td>
                     <td>{task.duration} {task.duration === 1 ? 'day' : 'days'}</td>
@@ -159,73 +247,6 @@ export default function TasksInterface({ tasks, setTasks }) {
           </table>
         </div>
       </div>
-
-      {/* Task Modal / Form Drawer */}
-      {(editingTask !== null || formData.name !== '') && (
-        <div className="card-footer bg-light border-top p-3">
-          <form onSubmit={handleSave}>
-            <div className="row g-3 align-items-end">
-              <div className="col-12 col-md-4">
-                <label className="form-label small fw-semibold">Task Name</label>
-                <input
-                  type="text"
-                  className="form-control form-control-sm"
-                  placeholder="e.g. Problem Identification"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  required
-                />
-              </div>
-              <div className="col-6 col-md-2">
-                <label className="form-label small fw-semibold">Duration (days)</label>
-                <input
-                  type="number"
-                  min="1"
-                  className="form-control form-control-sm"
-                  value={formData.duration}
-                  onChange={handleDurationChange}
-                  required
-                />
-              </div>
-              <div className="col-6 col-md-2">
-                <label className="form-label small fw-semibold">Start (Date)</label>
-                <input
-                  type="date"
-                  className="form-control form-control-sm"
-                  value={formData.start}
-                  onChange={handleStartChange}
-                  required
-                />
-              </div>
-              <div className="col-6 col-md-2">
-                <label className="form-label small fw-semibold">Finish (Date)</label>
-                <input
-                  type="date"
-                  className="form-control form-control-sm"
-                  value={formData.finish}
-                  onChange={handleFinishChange}
-                  required
-                />
-              </div>
-              <div className="col-6 col-md-2 d-flex gap-2">
-                <button type="submit" className="btn btn-sm btn-primary flex-grow-1">
-                  <i className="bi bi-check-lg me-1"></i> {editingTask ? 'Update' : 'Save'}
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-sm btn-outline-secondary"
-                  onClick={() => {
-                    setEditingTask(null);
-                    setFormData({ name: '', duration: 1, start: '', finish: '' });
-                  }}
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
-          </form>
-        </div>
-      )}
     </div>
   );
 }
