@@ -144,8 +144,110 @@ body {
   margin: 2px 4px 2px 0;
 }
 
+.gantt-scroll {
+  width: 100%;
+  overflow-x: auto;
+  background: #ffffff;
+}
+
+.gantt-grid {
+  display: grid;
+  grid-template-columns: 220px max-content;
+  min-width: calc(220px + (var(--gantt-columns) * 42px));
+}
+
+.gantt-corner,
+.gantt-task-label {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  background: #ffffff;
+  border-right: 1px solid #dfe5ec;
+  border-bottom: 1px solid #dfe5ec;
+}
+
+.gantt-corner {
+  height: 48px;
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  font-weight: 700;
+  background: #f1f5f9;
+}
+
+.gantt-dates {
+  display: grid;
+  grid-template-columns: repeat(var(--gantt-columns), 42px);
+  height: 48px;
+  border-bottom: 1px solid #dfe5ec;
+}
+
+.gantt-date {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-right: 1px solid #dfe5ec;
+  background: #f8fafc;
+  font-size: 10px;
+}
+
+.gantt-date strong {
+  font-size: 12px;
+  direction: ltr;
+}
+
+.gantt-task-label {
+  min-height: 52px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 6px 12px;
+  font-size: 12px;
+}
+
+.gantt-task-label small {
+  color: #64748b;
+  direction: ltr;
+  margin-top: 2px;
+}
+
+.gantt-row {
+  display: grid;
+  grid-template-columns: repeat(var(--gantt-columns), 42px);
+  min-height: 52px;
+  border-bottom: 1px solid #dfe5ec;
+}
+
+.gantt-day {
+  border-right: 1px solid #edf1f5;
+  background:
+    linear-gradient(to right, transparent 49%, rgba(148, 163, 184, 0.08) 50%, transparent 51%);
+}
+
+.gantt-day-active {
+  background: #65ad7d;
+  box-shadow: inset 0 0 0 1px #107c41;
+}
+
+.mpp-task-duration {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+.mpp-task-duration::-webkit-inner-spin-button,
+.mpp-task-duration::-webkit-outer-spin-button {
+  margin: 0;
+  -webkit-appearance: none;
+}
+
 /* Print Styling */
 @media print {
+  @page {
+    size: A4 landscape;
+    margin: 10mm;
+  }
+
   body {
     background-color: #ffffff !important;
     color: #000000 !important;
@@ -170,11 +272,15 @@ body {
     border: none !important;
     box-shadow: none !important;
     padding: 0 !important;
+    width: 100% !important;
+    overflow: visible !important;
   }
 
   .mpp-table {
     width: 100% !important;
     border: 1px solid #000 !important;
+    table-layout: fixed !important;
+    font-size: 8.5pt;
   }
 
   .mpp-table thead th {
@@ -183,11 +289,36 @@ body {
     border: 1px solid #000 !important;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
+    padding: 5px 6px !important;
+    white-space: normal !important;
+    overflow-wrap: anywhere;
   }
 
   .mpp-table tbody td {
     border: 1px solid #000 !important;
     color: #000000 !important;
+    padding: 5px 6px !important;
+    white-space: normal !important;
+    overflow-wrap: anywhere;
+  }
+
+  .mpp-table tfoot td {
+    border: 1px solid #000 !important;
+    padding: 5px 6px !important;
+  }
+
+  .print-section {
+    width: 100% !important;
+    padding: 0 !important;
+    margin: 0 0 8mm 0 !important;
+    border: none !important;
+    page-break-after: always;
+    break-after: page;
+  }
+
+  .print-section:last-child {
+    page-break-after: auto;
+    break-after: auto;
   }
 
   .mpp-print-header {

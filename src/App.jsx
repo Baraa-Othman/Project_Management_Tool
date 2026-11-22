@@ -4,6 +4,7 @@ import TasksInterface from './components/TasksInterface';
 import ResourceInterface from './components/ResourceInterface';
 import AllocationInterface from './components/AllocationInterface';
 import ReportsView from './components/ReportsView';
+import GanttView from './components/GanttView';
 
 export default function App() {
   const { tasks, setTasks, resources, setResources, resetToSampleData } = useProjectStorage();
@@ -85,6 +86,15 @@ export default function App() {
                 4-8. Reports & Print Sheets
               </button>
             </li>
+            <li className="nav-item">
+              <button
+                className={`nav-link ${currentTab === 'gantt' ? 'active' : ''}`}
+                onClick={() => setCurrentTab('gantt')}
+              >
+                <i className="bi bi-bar-chart-steps"></i>
+                Gantt Chart
+              </button>
+            </li>
           </ul>
         </div>
       </nav>
@@ -111,7 +121,11 @@ export default function App() {
         )}
 
         {currentTab === 'resources' && (
-          <ResourceInterface resources={resources} setResources={setResources} />
+          <ResourceInterface
+            resources={resources}
+            setResources={setResources}
+            setTasks={setTasks}
+          />
         )}
 
         {currentTab === 'allocation' && (
@@ -120,6 +134,9 @@ export default function App() {
 
         {currentTab === 'reports' && (
           <ReportsView tasks={tasks} resources={resources} />
+        )}
+        {currentTab === 'gantt' && (
+          <GanttView tasks={tasks} />
         )}
       </main>
 

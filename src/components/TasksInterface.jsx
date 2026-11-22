@@ -1,18 +1,29 @@
 import React, { useState } from 'react';
-import { formatDateDDMMYYYY, calculateFinishDate } from '../projectData';
+import {
+  formatDateDDMMYYYY,
+  calculateFinishDate,
+  calculateStartDate,
+  isWorkday,
+  getNextWorkday
+} from '../projectData';
 
 export default function TasksInterface({ tasks, setTasks }) {
   const [showForm, setShowForm] = useState(false);
   const [editingTaskId, setEditingTaskId] = useState(null);
+  const initialDate = getNextWorkday(new Date().toISOString().split('T')[0]);
   const [formData, setFormData] = useState({
     name: '',
     duration: 5,
-    start: new Date().toISOString().split('T')[0],
-    finish: calculateFinishDate(new Date().toISOString().split('T')[0], 5)
+    start: initialDate,
+    finish: calculateFinishDate(initialDate, 5)
   });
 
   const handleStartChange = (e) => {
     const newStart = e.target.value;
+    if (newStart && !isWorkday(newStart)) {
+      alert('Friday and Saturday are not workdays and cannot be selected.');
+      return;
+    }
     const computedFinish = calculateFinishDate(newStart, formData.duration);
     setFormData(prev => ({
       ...prev,
@@ -22,7 +33,13 @@ export default function TasksInterface({ tasks, setTasks }) {
   };
 
   const handleDurationChange = (e) => {
-    const newDuration = parseInt(e.target.value, 10) || 1;
+    const asciiValue = e.target.value.replace(/[^0-9]/g, '');
+    if (asciiValue === '') {
+      setFormData(prev => ({ ...prev, duration: '' }));
+      return;
+    }
+    const newDuration = parseInt(asciiValue, 10);
+    if (newDuration < 1) return;
     const computedFinish = calculateFinishDate(formData.start, newDuration);
     setFormData(prev => ({
       ...prev,
@@ -32,15 +49,22 @@ export default function TasksInterface({ tasks, setTasks }) {
   };
 
   const handleFinishChange = (e) => {
+    const newFinish = e.target.value;
+    if (newFinish && !isWorkday(newFinish)) {
+      alert('Friday and Saturday are not workdays and cannot be selected.');
+      return;
+    }
+    const computedStart = calculateStartDate(newFinish, formData.duration);
     setFormData(prev => ({
       ...prev,
-      finish: e.target.value
+      start: computedStart,
+      finish: newFinish
     }));
   };
 
   const handleOpenAdd = () => {
     setEditingTaskId(null);
-    const today = new Date().toISOString().split('T')[0];
+    const today = getNextWorkday(new Date().toISOString().split('T')[0]);
     setFormData({
       name: '',
       duration: 5,
@@ -73,20 +97,36 @@ export default function TasksInterface({ tasks, setTasks }) {
       return;
     }
 
+    const duration = parseInt(String(formData.duration).replace(/[^0-9]/g, ''), 10);
+    if (!duration || duration < 1) {
+      alert('Duration must be a positive whole number.');
+      return;
+    }
+    if (!isWorkday(formData.start) || !isWorkday(formData.finish)) {
+      alert('Start and finish dates must be workdays (Sunday through Thursday).');
+      return;
+    }
+
+    const normalizedFormData = {
+      ...formData,
+      name: formData.name.trim(),
+      duration
+    };
+
     if (editingTaskId !== null) {
       setTasks(prev => prev.map(t => (
         t.id === editingTaskId
-          ? { ...t, ...formData }
+          ? { ...t, ...normalizedFormData }
           : t
       )));
     } else {
       const nextId = tasks.length > 0 ? Math.max(...tasks.map(t => t.id)) + 1 : 1;
       setTasks(prev => [...prev, {
         id: nextId,
-        name: formData.name.trim(),
-        duration: formData.duration,
-        start: formData.start,
-        finish: formData.finish,
+        name: normalizedFormData.name,
+        duration: normalizedFormData.duration,
+        start: normalizedFormData.start,
+        finish: normalizedFormData.finish,
         resources: []
       }]);
     }
@@ -147,7 +187,10 @@ export default function TasksInterface({ tasks, setTasks }) {
                 <input
                   type="number"
                   min="1"
-                  className="form-control"
+                  step="1"
+                  inputMode="numeric"
+                  className="form-control mpp-task-duration"
+                  dir="ltr"
                   value={formData.duration}
                   onChange={handleDurationChange}
                   required

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-export default function ResourceInterface({ resources, setResources }) {
+export default function ResourceInterface({ resources, setResources, setTasks }) {
   const [showForm, setShowForm] = useState(false);
   const [editingResId, setEditingResId] = useState(null);
   const [formData, setFormData] = useState({
@@ -54,23 +54,43 @@ export default function ResourceInterface({ resources, setResources }) {
       return;
     }
 
+    const normalizedName = formData.name.trim();
+    const duplicate = resources.some(resource =>
+      resource.id !== editingResId &&
+      resource.name.trim().toLowerCase() === normalizedName.toLowerCase()
+    );
+    if (duplicate) {
+      alert('A resource with this name already exists');
+      return;
+    }
+
     if (editingResId !== null) {
+      const existingResource = resources.find(resource => resource.id === editingResId);
+      const oldName = existingResource?.name;
       setResources(prev => prev.map(r => (
         r.id === editingResId
           ? {
               ...r,
-              name: formData.name.trim(),
+              name: normalizedName,
               type: formData.type,
               stRate: formData.type === 'Cost' ? 0 : parseFloat(formData.stRate) || 0,
               costPerUse: formData.type === 'Cost' ? parseFloat(formData.costPerUse) || 0 : 0
             }
           : r
       )));
+      if (oldName && oldName !== normalizedName) {
+        setTasks(prev => prev.map(task => ({
+          ...task,
+          resources: (task.resources || []).map(resourceName =>
+            resourceName === oldName ? normalizedName : resourceName
+          )
+        })));
+      }
     } else {
       const nextId = resources.length > 0 ? Math.max(...resources.map(r => r.id)) + 1 : 1;
       setResources(prev => [...prev, {
         id: nextId,
-        name: formData.name.trim(),
+        name: normalizedName,
         type: formData.type,
         stRate: formData.type === 'Cost' ? 0 : parseFloat(formData.stRate) || 0,
         costPerUse: formData.type === 'Cost' ? parseFloat(formData.costPerUse) || 0 : 0
@@ -83,7 +103,16 @@ export default function ResourceInterface({ resources, setResources }) {
 
   const handleDelete = (id) => {
     if (window.confirm(`Are you sure you want to delete this Resource?`)) {
+      const resourceToDelete = resources.find(resource => resource.id === id);
       setResources(prev => prev.filter(r => r.id !== id));
+      if (resourceToDelete) {
+        setTasks(prev => prev.map(task => ({
+          ...task,
+          resources: (task.resources || []).filter(
+            resourceName => resourceName !== resourceToDelete.name
+          )
+        })));
+      }
     }
   };
 
@@ -166,6 +195,7 @@ export default function ResourceInterface({ resources, setResources }) {
                   min="0"
                   disabled={formData.type === 'Cost'}
                   className="form-control"
+                  dir="ltr"
                   placeholder={formData.type === 'Cost' ? 'Disabled for Cost' : '0'}
                   value={formData.type === 'Cost' ? '' : formData.stRate}
                   onChange={(e) => setFormData({ ...formData, stRate: e.target.value })}
@@ -179,6 +209,7 @@ export default function ResourceInterface({ resources, setResources }) {
                   min="0"
                   disabled={formData.type !== 'Cost'}
                   className="form-control"
+                  dir="ltr"
                   placeholder={formData.type !== 'Cost' ? 'Disabled for Work/Mat' : '0'}
                   value={formData.type !== 'Cost' ? '' : formData.costPerUse}
                   onChange={(e) => setFormData({ ...formData, costPerUse: e.target.value })}

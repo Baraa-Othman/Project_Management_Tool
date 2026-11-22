@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import {
   formatDateDDMMYYYY,
-  calculateResourceCost,
   calculateTaskTotalCost
 } from '../projectData';
 
@@ -27,7 +26,7 @@ export default function ReportsView({ tasks, resources }) {
 
   // Compute Grand Total for Report 8
   const grandTotalCost = tasks.reduce((sum, task) => {
-    return sum + calculateTaskTotalCost(task, resources);
+    return sum + calculateTaskTotalCost(task, resources, tasks);
   }, 0);
 
   const handlePrint = () => {
@@ -285,7 +284,7 @@ export default function ReportsView({ tasks, resources }) {
                   ) : (
                     tasks.map(task => {
                       const resNames = (task.resources || []).join(', ');
-                      const taskCost = calculateTaskTotalCost(task, resources);
+                      const taskCost = calculateTaskTotalCost(task, resources, tasks);
                       return (
                         <tr key={task.id}>
                           <td className="text-center fw-semibold text-secondary">{task.id}</td>
@@ -341,7 +340,7 @@ export default function ReportsView({ tasks, resources }) {
                   ) : (
                     tasks.map(task => {
                       const resNames = (task.resources || []).join(', ');
-                      const taskCost = calculateTaskTotalCost(task, resources);
+                      const taskCost = calculateTaskTotalCost(task, resources, tasks);
                       return (
                         <tr key={task.id}>
                           <td className="text-center fw-semibold text-secondary">{task.id}</td>
